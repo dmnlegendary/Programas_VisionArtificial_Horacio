@@ -1,39 +1,59 @@
 import tkinter as tk
 from tkinter import filedialog
-from PIL import Image, ImageTk
-import cv2
+from PIL import Image, ImageTk, ImageOps
 
 def apply_kernel(image_path):
     # Leer la imagen
-    image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = Image.open(image_path)
+    image = ImageOps.exif_transpose(image)  # Corregir la orientación usando EXIF
+
+    # Redimensionar la imagen si es más grande que 500x500
+    max_size = (500, 500)
+    image.thumbnail(max_size)
+
+    image_rgb = image.convert("RGB")
+    image_data = image_rgb.load()
 
     # Kernel de relieve (Emboss)
-    kernel = [[-2, -1, 0], 
+    '''[[-2, -1, 0], 
               [-1, 1, 1], 
-              [0, 1, 2]]
+              [0, 1, 2]]'''
+              
+    '''[[0, -1, 0], 
+              [-1, 5, -1], 
+              [0, -1, 0]]
+'''
+    
+    '''[[-1, -2, -1], 
+              [0,0, 0], 
+              [1, 2, 1]] Sobel horizontal'''
+              
+    kernel = [[-1, -1, -1], 
+              [-1,8, -1], 
+              [-1, -1,-1]]
 
     # Obtener las dimensiones de la imagen
-    rows, cols, channels = image_rgb.shape
+    ancho, altura = image_rgb.size
 
     # Crear una imagen de salida
-    filtered_image = image_rgb.copy()
+    filtered_image = Image.new("RGB", (ancho, altura))
+    filtered_image_data = filtered_image.load()
 
     # Aplicar el filtro a la imagen
-    for i in range(1, rows-1):
-        for j in range(1, cols-1):
-            for c in range(channels):
-                filtered_value = (kernel[0][0] * image_rgb[i-1][j-1][c] + kernel[0][1] * image_rgb[i-1][j][c] + kernel[0][2] * image_rgb[i-1][j+1][c] +
-                                  kernel[1][0] * image_rgb[i][j-1][c] + kernel[1][1] * image_rgb[i][j][c] + kernel[1][2] * image_rgb[i][j+1][c] +
-                                  kernel[2][0] * image_rgb[i+1][j-1][c] + kernel[2][1] * image_rgb[i+1][j][c] + kernel[2][2] * image_rgb[i+1][j+1][c])
+    for i in range(1, ancho-1):
+        for j in range(1, altura-1):
+            for c in range(3):  # Para cada canal (R, G, B)
+                filtered_value = (
+                    kernel[0][0] * image_data[i-1, j-1][c] + kernel[0][1] * image_data[i, j-1][c] + kernel[0][2] * image_data[i+1, j-1][c] +
+                    kernel[1][0] * image_data[i-1, j][c] + kernel[1][1] * image_data[i, j][c] + kernel[1][2] * image_data[i+1, j][c] +
+                    kernel[2][0] * image_data[i-1, j+1][c] + kernel[2][1] * image_data[i, j+1][c] + kernel[2][2] * image_data[i+1, j+1][c]
+                )
                 filtered_value = max(0, min(255, filtered_value))  # Asegurarse de que el valor esté entre 0 y 255
-                filtered_image[i, j, c] = filtered_value
+                filtered_image_data[i, j] = tuple(
+                    filtered_value if k == c else image_data[i, j][k] for k in range(3)
+                )
 
-    # Convertir las imágenes a formato PIL para mostrarlas en Tkinter
-    original_image_pil = Image.fromarray(image_rgb)
-    filtered_image_pil = Image.fromarray(filtered_image)
-
-    return original_image_pil, filtered_image_pil
+    return image_rgb, filtered_image
 
 def open_image():
     file_path = filedialog.askopenfilename()
@@ -51,17 +71,19 @@ def open_image():
 
 # Configurar la ventana principal
 root = tk.Tk()
-root.title("Aplicación de Kernel en Imágenes")
+root.title("Segmentacion por Kernel")
+root.geometry("1280x720")
+root.config(bg="#FF8040")
 
 # Crear botones y etiquetas para las imágenes
-open_button = tk.Button(root, text="Abrir Imagen", command=open_image)
-open_button.pack()
+open_button = tk.Button(root, text="Abrir Imagen", bg="#00DDAA", fg="#FFFFFF", font=("Verdana", 16, "bold"), command=open_image)
+open_button.pack(side=tk.TOP, padx=40, pady=40)
 
 original_label = tk.Label(root)
-original_label.pack(side="left", padx=10, pady=10)
+original_label.pack(side=tk.LEFT, padx=10, pady=10)
 
 filtered_label = tk.Label(root)
-filtered_label.pack(side="right", padx=10, pady=10)
+filtered_label.pack(side=tk.RIGHT, padx=10, pady=10)
 
 # Iniciar el bucle principal de la interfaz
 root.mainloop()
