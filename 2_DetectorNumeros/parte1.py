@@ -2,7 +2,7 @@ from PIL import Image
 
 # Direcciones de las imagenes a trabajar
 imagen_del_numero_original = "C:\\Materias\\Programas_Lenguaje_Horacio\\Programas1_Perceptron\\NUMEROS\\1.bmp"
-imagen_del_numero_entrada = "C:\\Materias\\Programas_Lenguaje_Horacio\\Programas1_Perceptron\\NUMEROS\\1.bmp"
+imagen_del_numero_entrada = "C:\\Materias\\Programas_Lenguaje_Horacio\\Programas1_Perceptron\\NUMEROS\\2.bmp"
 
 # Funcion para comparar las imagenes
 def comparar_imagenes(Imagen_Original, Imagen_Entrada):
